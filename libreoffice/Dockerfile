@@ -12,15 +12,18 @@
 #	--name libreoffice \
 #	jess/libreoffice
 #
-FROM alpine:latest
-LABEL maintainer "Jessie Frazelle <jess@linux.com>"
+FROM debian:buster-20200224-slim
+# Using debian:buster-slim instead of alpine:3.11
+# because we need the libreoffice-gtk3 package that I'm not sure exists on
+# alpine
+LABEL maintainer "Emil Lerch <lobo@lerch.org>"
 
 ENV HOME=/home/user
 
-RUN apk --no-cache add \
-	--repository https://dl-3.alpinelinux.org/alpine/edge/testing \
-	libreoffice \
-	ttf-dejavu && \
+RUN apt-get update && apt-get -y install --no-install-recommends \
+	libreoffice=1:6.1.5-3+deb10u5 \
+  libreoffice-gtk3=1:6.1.5-3+deb10u5 && \
+  rm -rf /var/cache/apt && \
 	mkdir -p /home/user && \
 	chmod 777 /home/user
 
