@@ -14,36 +14,54 @@
 #	--name slack \
 #	jess/slack "$@"
 
-FROM debian:jessie-slim
-LABEL maintainer "Jessie Frazelle <jess@linux.com>"
+FROM debian:buster-slim
+LABEL maintainer "Emil Lerch <lobo@lerch.org>"
 
-ENV LC_ALL en_US.UTF-8
-ENV LANG en_US.UTF-8
-
-RUN apt-get update && apt-get install -y \
-	apt-transport-https \
+# Firefox-esr because slack login needs to launch a browser
+# dunst/dbus-x11 because we need a way to show notifications and I can't figure out
+# how to patch dbus sessions through a rootless container yet.
+#
+# Note this dbus business screws with showing up in the tray, so we will need
+# to figure that out
+RUN apt-get update && apt-get install -y --no-install-recommends \
 	ca-certificates \
-	curl \
-	gnupg \
-	locales \
-	--no-install-recommends \
-	&& rm -rf /var/lib/apt/lists/*
+	wget \
+  libgtk-3-0 \
+  libappindicator3-1 \
+  libnotify4 \
+  libnss3 \
+  libxss1 \
+  libxtst6 \
+  xdg-utils \
+  libatspi2.0-0 \
+  kde-cli-tools \
+  kde-runtime \
+  trash-cli \
+  libglib2.0-bin \
+  gvfs-bin \
+  firefox-esr \
+  dbus-x11 \
+  libxkbfile1 \
+  libxdg-basedir1 \
+  && \
+  wget -nv https://downloads.slack-edge.com/linux_releases/slack-desktop-4.4.3-amd64.deb && \
+  dpkg -i *.deb && \
+  rm slack-desktop-4.4.3-amd64.deb \
+  && apt remove -y wget \
+	&& rm -rf /var/lib/apt/lists/* \
+  && mkdir /root/.config
 
-RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
-	&& locale-gen en_US.utf8 \
-	&& /usr/sbin/update-locale LANG=en_US.UTF-8
+COPY mimeapps.list /root/.config
 
-# Add the slack debian repo
-RUN curl -sSL https://packagecloud.io/slacktechnologies/slack/gpgkey | apt-key add -
-RUN echo "deb https://packagecloud.io/slacktechnologies/slack/debian/ jessie main" > /etc/apt/sources.list.d/slacktechnologies_slack.list
+ENV HOME /home/user
+RUN useradd --create-home --home-dir $HOME user \
+	&& chown -R user:user $HOME
+WORKDIR $HOME
+USER user
 
-RUN apt-get update && apt-get -y install \
-	libasound2 \
-	libgtk-3-0 \
-	libx11-xcb1 \
-	libxkbfile1 \
-	slack-desktop \
-	--no-install-recommends \
-	&& rm -rf /var/lib/apt/lists/*
-
-ENTRYPOINT ["/usr/lib/slack/slack"]
+# Yeah, this is weird. For some reason, slack will fail on first run, then
+# succeed on the second...
+#
+# --no-sandbox is needed as electron likes to setup new namespaces, which
+# it can't do from within the container
+ENTRYPOINT ["/bin/sh", "-c", "/usr/lib/slack/slack --no-sandbox || /usr/lib/slack/slack --no-sandbox"]
