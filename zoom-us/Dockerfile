@@ -7,7 +7,7 @@
 #	-v /dev/shm:/dev/shm \
 #	zoom-us
 
-FROM debian:sid-slim
+FROM debian:buster-slim
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -17,8 +17,6 @@ RUN apt-get update && apt-get install -y \
 	curl \
 	desktop-file-utils \
 	ibus \
-	ibus-gtk \
-	ibus-qt4 \
 	lib32z1 \
 	libx11-6 \
 	libasound2-dev \
@@ -42,19 +40,20 @@ RUN apt-get update && apt-get install -y \
 	libxcb-image0 \
 	libxcb-keysyms1 \
 	libxcb-xtest0 \
-	libibus-qt1 \
 	libnss3 \
 	libxss1 \
 	sudo \
 	--no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/*
 
-ARG ZOOM_URL=https://zoom.us/client/latest/zoom_amd64.deb
+# Query string doesn't do anything, but does allow us to invalidate the
+# layers below
+ARG ZOOM_URL=https://zoom.us/client/latest/zoom_amd64.deb?v=5.2.458699.0906
 
 #install zoom
 RUN curl -sSL $ZOOM_URL -o /tmp/zoom_setup.deb \
 	&& dpkg -i /tmp/zoom_setup.deb \
-	&& apt-get -f install \
+	&& apt-get -y -f install \
 	&& rm /tmp/zoom_setup.deb \
 	&& rm -rf /var/lib/apt/lists/*
 
