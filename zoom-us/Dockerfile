@@ -42,13 +42,15 @@ RUN apt-get update && apt-get install -y \
 	libxcb-xtest0 \
 	libnss3 \
 	libxss1 \
+	libxcb-xinerama0 \
+	libxkbcommon-x11-0 \
 	sudo \
 	--no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Query string doesn't do anything, but does allow us to invalidate the
 # layers below
-ARG ZOOM_URL=https://zoom.us/client/latest/zoom_amd64.deb?v=5.2.458699.0906
+ARG ZOOM_URL=https://zoom.us/client/latest/zoom_amd64.deb?v=5.5.7011.0206
 
 #install zoom
 RUN curl -sSL $ZOOM_URL -o /tmp/zoom_setup.deb \
